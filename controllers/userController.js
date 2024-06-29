@@ -34,25 +34,65 @@ const {
  *       500:
  *         description: Server error
  */
+// const register = asyncHandler(async (req, res) => {
+//   try {
+//     const { email, password, firstname, lastname, address , mobile } = req.body;
+//     if (!email || !password || !lastname || !firstname || !address || !mobile)
+//       return res.status(400).json({
+//         success: false,
+//         mes: "Missing input",
+//       });
+//     const user = await User.findOne({ email: email });
+//     if (user) throw new Error("User already exists");
+//     else {
+//       const newUser = await User.create(req.body);
+//       return res.status(200).json({
+//         success: newUser ? true : false,
+//         mes: newUser
+//           ? "Registration successful. Go to login"
+//           : "Something went wrong",
+//       });
+//     }
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       mes: error.message,
+//     });
+//   }
+// });
 const register = asyncHandler(async (req, res) => {
   try {
-    const { email, password, firstname, lastname, address , mobile } = req.body;
-    if (!email || !password || !lastname || !firstname || !address || !mobile)
+    const { email, password, firstname, lastname, address, mobile } = req.body;
+
+    if (!email || !password || !lastname || !firstname || !address || !mobile) {
       return res.status(400).json({
         success: false,
-        mes: "Missing input",
-      });
-    const user = await User.findOne({ email: email });
-    if (user) throw new Error("User already exists");
-    else {
-      const newUser = await User.create(req.body);
-      return res.status(200).json({
-        success: newUser ? true : false,
-        mes: newUser
-          ? "Registration successful. Go to login"
-          : "Something went wrong",
+        mes: 'Missing input',
       });
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        mes: 'Invalid email format',
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({
+        success: false,
+        mes: 'User already exists',
+      });
+    }
+
+    const newUser = await User.create(req.body);
+    return res.status(200).json({
+      success: !!newUser,
+      mes: newUser ? 'Registration successful. Go to login' : 'Something went wrong',
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -117,7 +157,7 @@ const login = asyncHandler(async (req, res) => {
       userData,
     });
   } else {
-    throw new Error("Invalid credentials");
+    throw new Error("Something went wrong pleas login again");
   }
 });
 
