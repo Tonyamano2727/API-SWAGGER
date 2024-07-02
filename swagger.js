@@ -21,6 +21,32 @@ const options = {
               type: 'string'
             }
           }
+        },
+        Product: {
+          type: 'object',
+          properties: {
+            title: {
+              type: 'string'
+            },
+            category: {
+              type: 'string'
+            },
+            color: {
+              type: 'string'
+            },
+            price: {
+              type: 'number'
+            },
+            description: {
+              type: 'string'
+            },
+            brand: {
+              type: 'string'
+            },
+            imageUrl: {
+              type: 'string'
+            }
+          }
         }
       }
     }
