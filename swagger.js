@@ -43,7 +43,13 @@ const options = {
             brand: {
               type: 'string'
             },
-            imageUrl: {
+            images: {  // Thay đổi từ imageUrl thành images
+              type: 'array',
+              items: {
+                type: 'string'
+              }
+            },
+            thumb: {  // Thay đổi từ imageUrl thành thumb
               type: 'string'
             }
           }

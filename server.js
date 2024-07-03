@@ -10,6 +10,7 @@ const port = process.env.PORT || 3000;
 
 // Middleware để phân tích yêu cầu JSON
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Kết nối tới MongoDB
 dbConnect();

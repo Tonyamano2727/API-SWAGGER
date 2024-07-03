@@ -62,6 +62,7 @@ const {
 const register = asyncHandler(async (req, res) => {
   try {
     const { email, password, firstname, lastname, address, mobile } = req.body;
+    console.log(req.body);
 
     if (!email || !password || !lastname || !firstname || !address || !mobile) {
       return res.status(400).json({

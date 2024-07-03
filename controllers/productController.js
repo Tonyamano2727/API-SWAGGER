@@ -1,11 +1,12 @@
 const asyncHandler = require("express-async-handler");
 const Product = require("../models/Product");
-
+const slugify = require("slugify");
 /**
  * @swagger
  * /api/products:
  *   get:
  *     summary: Retrieve a list of products
+ *     tags: [Products] 
  *     parameters:
  *       - in: query
  *         name: title
@@ -36,7 +37,7 @@ const Product = require("../models/Product");
  *         name: price[lt]
  *         schema:
  *           type: number
- *         description: Sort 
+ *         description: Sort
  *       - in: query
  *         name: price[gt]
  *         schema:
@@ -51,13 +52,13 @@ const Product = require("../models/Product");
  *         name: page
  *         schema:
  *           type: integer
- *           
+ *
  *           description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           
+ *
  *           description: Number of items per page
  *     responses:
  *       200:
@@ -86,16 +87,23 @@ const getallproducts = asyncHandler(async (req, res) => {
   excludeFields.forEach((el) => delete queries[el]);
 
   let queryString = JSON.stringify(queries);
-  queryString = queryString.replace(/\b(gte|gt|lt|lte)\b/g, (matchedEl) => `$${matchedEl}`);
+  queryString = queryString.replace(
+    /\b(gte|gt|lt|lte)\b/g,
+    (matchedEl) => `$${matchedEl}`
+  );
   const formattedQueries = JSON.parse(queryString);
   let colorQueryObject = {};
 
-  if (queries?.title) formattedQueries.title = { $regex: queries.title, $options: "i" };
-  if (queries?.category) formattedQueries.category = { $regex: queries.category, $options: "i" };
+  if (queries?.title)
+    formattedQueries.title = { $regex: queries.title, $options: "i" };
+  if (queries?.category)
+    formattedQueries.category = { $regex: queries.category, $options: "i" };
   if (queries?.color) {
     delete formattedQueries.color;
-    const colorArr = queries.color?.split(',');
-    const colorQuery = colorArr.map((el) => ({ color: { $regex: el, $options: 'i' } }));
+    const colorArr = queries.color?.split(",");
+    const colorQuery = colorArr.map((el) => ({
+      color: { $regex: el, $options: "i" },
+    }));
     colorQueryObject = { $or: colorQuery };
   }
   let queryObject = {};
@@ -103,14 +111,13 @@ const getallproducts = asyncHandler(async (req, res) => {
     delete formattedQueries.q;
     queryObject = {
       $or: [
-        { color: { $regex: queries.q, $options: 'i' } },
-        { title: { $regex: queries.q, $options: 'i' } },
-        { category: { $regex: queries.q, $options: 'i' } },
-        { brand: { $regex: queries.q, $options: 'i' } },
+        { color: { $regex: queries.q, $options: "i" } },
+        { title: { $regex: queries.q, $options: "i" } },
+        { category: { $regex: queries.q, $options: "i" } },
+        { brand: { $regex: queries.q, $options: "i" } },
       ],
     };
   }
-
 
   const qr = { ...colorQueryObject, ...formattedQueries, ...queryObject };
   let queryCommand = Product.find(qr);
@@ -143,61 +150,78 @@ const getallproducts = asyncHandler(async (req, res) => {
   }
 });
 
-
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ *       
  * /api/products:
  *   post:
  *     summary: Create a new product
- *     consumes:
- *       - multipart/form-data
+ *     tags: [Products] 
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Product'
+ *     responses:
+ *       201:
+ *         description: Product created successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+
+const createproducts = async (req, res) => {
+  try {
+    const productData = req.body;
+
+    // Validate that required fields are present
+    if (!productData.title || !productData.slug || !productData.description || !productData.brand || !productData.price || !productData.category) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const newProduct = new Product(productData);
+    const savedProduct = await newProduct.save();
+    res.status(201).json(savedProduct);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * /api/products/{pid}:
+ *   delete:
+ *     summary: Delete a product by ID
+ *     tags: [Products]
  *     parameters:
- *       - name: title
- *         in: formData
- *         description: Title of the product
+ *       - in: path
+ *         name: pid
  *         required: true
- *         type: string
- *       - name: price
- *         in: formData
- *         description: Price of the product
- *         required: true
- *         type: number
- *         format: double
- *       - name: description
- *         in: formData
- *         description: Description of the product
- *         required: true
- *         type: string
- *       - name: brand
- *         in: formData
- *         description: Brand of the product
- *         required: true
- *         type: string
- *       - name: category
- *         in: formData
- *         description: Category of the product
- *         required: true
- *         type: string
- *       - name: color
- *         in: formData
- *         description: Color of the product
- *         required: true
- *         type: string
- *       - name: thumb
- *         in: formData
- *         description: Thumbnail image of the product
- *         required: false
- *         type: file
- *       - name: images
- *         in: formData
- *         description: Additional images of the product
- *         required: false
- *         type: array
- *         items:
- *           type: file
+ *         schema:
+ *           type: string
+ *         description: ID of the product to delete
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Product created successfully
+ *         description: Delete successful
  *         content:
  *           application/json:
  *             schema:
@@ -207,29 +231,113 @@ const getallproducts = asyncHandler(async (req, res) => {
  *                   type: boolean
  *                 mes:
  *                   type: string
- *       400:
- *         description: Missing input
+ *       404:
+ *         description: Product not found
  *       500:
- *         description: Internal server error
+ *         description: Server error
  */
-const createproducts = asyncHandler(async (req, res) => {
-  const { title, price, description, brand, category, color } = req.body;
-  const thumb = req?.files?.thumb[0]?.path;
-  const images = req.files?.images?.map(el => el.path);
+const deleteProduct = asyncHandler(async (req, res) => {
+  const { pid } = req.params;
+  try {
+    const deleteProduct = await Product.findByIdAndDelete(pid);
+    if (!deleteProduct) {
+      return res.status(404).json({
+        success: false,
+        mes: 'Product not found',
+      });
+    }
+    return res.status(200).json({
+      success: true,
+      mes: 'Deleted',
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      mes: 'Cannot delete product',
+    });
+  }
+});
 
-  if (!(title && price && description && brand && category && color)) throw new Error("Missing input");
-  req.body.slug = slugify(title);
-  if (thumb) req.body.thumb = thumb;
-  if (images) req.body.images = images;
-  const newproducts = await Product.create(req.body);
-  return res.status(200).json({
-    success: newproducts ? true : false,
-    mes: newproducts ? 'Product has been created' : "Failed to create product",
-  });
+
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ */
+/**
+ * @swagger
+ * /api/products/{pid}:
+ *   put:
+ *     summary: Update a product by ID
+ *     tags: [Products] 
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: pid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the product to update
+ *       - in: body
+ *         name: body
+ *         required: true
+ *         schema:
+ *           type: object
+ *           properties:
+ *             title:
+ *               type: string
+ *               description: New title for the product
+ *     responses:
+ *       '200':
+ *         description: A successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mes:
+ *                   type: string
+ */
+const updateProduct = asyncHandler(async (req, res) => {
+  const { pid } = req.params;
+  try {
+    if (req.body && req.body.title) {
+      req.body.slug = slugify(req.body.title);
+    }
+    const updatedProduct = await Product.findByIdAndUpdate(pid, req.body, { new: true });
+
+    if (!updatedProduct) {
+      return res.status(404).json({
+        success: false,
+        mes: 'Product not found',
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      mes: updatedProduct,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      mes: 'Internal Server Error',
+    });
+  }
 });
 
 
 module.exports = {
   getallproducts,
-  createproducts
+  createproducts,
+  deleteProduct,
+  updateProduct
 };

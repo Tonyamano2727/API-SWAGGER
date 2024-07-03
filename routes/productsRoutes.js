@@ -5,6 +5,8 @@ const productsController = require('../controllers/productController');
 const uploader = require('../Config/cloudinary.cofig')
 
 router.get('/', productsController.getallproducts);
-router.post('/',[verifyToken, isAdmin],uploader.fields([{name : 'images' , maxCount:10},{name: 'thumb' , maxCount:1}]), productsController.createproducts)
+router.post('/',[verifyToken, isAdmin], productsController.createproducts)
+router.delete('/:pid',[verifyToken, isAdmin], productsController.deleteProduct)
+router.put('/:pid',[verifyToken, isAdmin], productsController.updateProduct)
 
 module.exports = router;
