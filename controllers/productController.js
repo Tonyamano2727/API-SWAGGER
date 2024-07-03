@@ -51,13 +51,13 @@ const Product = require("../models/Product");
  *         name: page
  *         schema:
  *           type: integer
- *           default: 1
+ *           
  *           description: Page number
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
- *           default: 10
+ *           
  *           description: Number of items per page
  *     responses:
  *       200:
@@ -143,6 +143,93 @@ const getallproducts = asyncHandler(async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Create a new product
+ *     consumes:
+ *       - multipart/form-data
+ *     parameters:
+ *       - name: title
+ *         in: formData
+ *         description: Title of the product
+ *         required: true
+ *         type: string
+ *       - name: price
+ *         in: formData
+ *         description: Price of the product
+ *         required: true
+ *         type: number
+ *         format: double
+ *       - name: description
+ *         in: formData
+ *         description: Description of the product
+ *         required: true
+ *         type: string
+ *       - name: brand
+ *         in: formData
+ *         description: Brand of the product
+ *         required: true
+ *         type: string
+ *       - name: category
+ *         in: formData
+ *         description: Category of the product
+ *         required: true
+ *         type: string
+ *       - name: color
+ *         in: formData
+ *         description: Color of the product
+ *         required: true
+ *         type: string
+ *       - name: thumb
+ *         in: formData
+ *         description: Thumbnail image of the product
+ *         required: false
+ *         type: file
+ *       - name: images
+ *         in: formData
+ *         description: Additional images of the product
+ *         required: false
+ *         type: array
+ *         items:
+ *           type: file
+ *     responses:
+ *       200:
+ *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 mes:
+ *                   type: string
+ *       400:
+ *         description: Missing input
+ *       500:
+ *         description: Internal server error
+ */
+const createproducts = asyncHandler(async (req, res) => {
+  const { title, price, description, brand, category, color } = req.body;
+  const thumb = req?.files?.thumb[0]?.path;
+  const images = req.files?.images?.map(el => el.path);
+
+  if (!(title && price && description && brand && category && color)) throw new Error("Missing input");
+  req.body.slug = slugify(title);
+  if (thumb) req.body.thumb = thumb;
+  if (images) req.body.images = images;
+  const newproducts = await Product.create(req.body);
+  return res.status(200).json({
+    success: newproducts ? true : false,
+    mes: newproducts ? 'Product has been created' : "Failed to create product",
+  });
+});
+
+
 module.exports = {
   getallproducts,
+  createproducts
 };
