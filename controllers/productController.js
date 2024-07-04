@@ -271,31 +271,31 @@ const deleteProduct = asyncHandler(async (req, res) => {
  */
 /**
  * @swagger
- * /api/products/{pid}:
+ * /api/cart:
  *   put:
- *     summary: Update a product by ID
- *     tags: [Products] 
+ *     summary: Update the user's cart
+ *     tags: [Cart]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: pid
- *         required: true
- *         schema:
- *           type: string
- *         description: The ID of the product to update
- *       - in: body
- *         name: body
- *         required: true
- *         schema:
- *           type: object
- *           properties:
- *             title:
- *               type: string
- *               description: New title for the product
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/x-www-form-urlencoded:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               pid:
+ *                 type: string
+ *                 description: Product ID
+ *               quantity:
+ *                 type: number
+ *                 description: Quantity of the product
+ *                 default: 1
+ *             required:
+ *               - pid
  *     responses:
- *       '200':
- *         description: A successful response
+ *       200:
+ *         description: Cart updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -305,6 +305,12 @@ const deleteProduct = asyncHandler(async (req, res) => {
  *                   type: boolean
  *                 mes:
  *                   type: string
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
 const updateProduct = asyncHandler(async (req, res) => {
   const { pid } = req.params;
