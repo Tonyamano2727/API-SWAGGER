@@ -8,6 +8,32 @@ const {
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     User:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *         - firstname
+ *         - lastname
+ *         - address
+ *         - mobile
+ *       properties:
+ *         email:
+ *           type: string
+ *         password:
+ *           type: string
+ *         firstname:
+ *           type: string
+ *         lastname:
+ *           type: string
+ *         address:
+ *           type: string
+ *         mobile:
+ *           type: string
+ *
+ * @swagger
  * /api/register:
  *   post:
  *     summary: Register a new user
@@ -15,9 +41,22 @@ const {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               firstname:
+ *                 type: string
+ *               lastname:
+ *                 type: string
+ *               address:
+ *                 type: string
+ *               mobile:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Registration successful
@@ -35,36 +74,9 @@ const {
  *       500:
  *         description: Server error
  */
-// const register = asyncHandler(async (req, res) => {
-//   try {
-//     const { email, password, firstname, lastname, address , mobile } = req.body;
-//     if (!email || !password || !lastname || !firstname || !address || !mobile)
-//       return res.status(400).json({
-//         success: false,
-//         mes: "Missing input",
-//       });
-//     const user = await User.findOne({ email: email });
-//     if (user) throw new Error("User already exists");
-//     else {
-//       const newUser = await User.create(req.body);
-//       return res.status(200).json({
-//         success: newUser ? true : false,
-//         mes: newUser
-//           ? "Registration successful. Go to login"
-//           : "Something went wrong",
-//       });
-//     }
-//   } catch (error) {
-//     return res.status(500).json({
-//       success: false,
-//       mes: error.message,
-//     });
-//   }
-// });
 const register = asyncHandler(async (req, res) => {
   try {
     const { email, password, firstname, lastname, address, mobile } = req.body;
-    console.log(req.body);
 
     if (!email || !password || !lastname || !firstname || !address || !mobile) {
       return res.status(400).json({
@@ -105,7 +117,21 @@ const register = asyncHandler(async (req, res) => {
   }
 });
 
+
 /**
+ * @swagger
+ * components:
+ *   schemas:
+ *     UserLoginFormData:
+ *       type: object
+ *       required:
+ *         - email
+ *         - password
+ *       properties:
+ *         email:
+ *           type: string
+ *         password:
+ *           type: string
  * @swagger
  * /api/login:
  *   post:
@@ -114,16 +140,28 @@ const register = asyncHandler(async (req, res) => {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Login successful
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/User'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 Accesstoken:
+ *                   type: string
+ *                 userData:
+ *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: Bad request
  *       500:
@@ -136,36 +174,48 @@ const login = asyncHandler(async (req, res) => {
       success: false,
       mes: "Missing input",
     });
-  const response = await User.findOne({ email: email });
-  if (response && (await response.isConrectPassword(password))) {
-    // Tách password và role khỏi response
-    const { password, role, refreshToken, ...userData } = response.toObject(); // hide 2 truong
-    // Tạo access token
-    const Accesstoken = generrateAccessToken(response._id, role);
-    // Tạo refresh token
-    const newrefreshToken = generrateRefreshToken(response._id);
-    // Lưu refres token vào database
-    await User.findByIdAndUpdate(
-      response._id,
-      { refreshToken: newrefreshToken },
-      { new: true }
-    );
-    // Lưu refresh token vào cookie
-    res.cookie("refreshToken", newrefreshToken, {
-      httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+  
+  try {
+    const response = await User.findOne({ email: email });
+
+    if (response && (await response.isConrectPassword(password))) {
+      // Remove sensitive fields from the response object
+      const { password: _, role, refreshToken, ...userData } = response.toObject();
+
+      // Generate access token
+      const Accesstoken = generrateAccessToken(response._id, role);
+
+      // Generate refresh token
+      const newrefreshToken = generrateRefreshToken(response._id);
+
+      // Update refresh token in the database
+      await User.findByIdAndUpdate(
+        response._id,
+        { refreshToken: newrefreshToken },
+        { new: true }
+      );
+
+      // Set refresh token in cookie
+      res.cookie("refreshToken", newrefreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.status(200).json({
+        success: true,
+        Accesstoken,
+        userData,
+      });
+    } else {
+      throw new Error("Something went wrong, please login again");
+    }
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      mes: error.message,
     });
-    return res.status(200).json({
-      success: true,
-      Accesstoken,
-      userData,
-    });
-  } else {
-    throw new Error("Something went wrong pleas login again");
   }
 });
-
-
 
 
 /**
@@ -179,7 +229,7 @@ const login = asyncHandler(async (req, res) => {
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -190,8 +240,6 @@ const login = asyncHandler(async (req, res) => {
  *                 type: number
  *                 description: Quantity of the product
  *                 default: 1
- *             required:
- *               - pid
  *     responses:
  *       200:
  *         description: Cart updated successfully
@@ -211,7 +259,6 @@ const login = asyncHandler(async (req, res) => {
  *       500:
  *         description: Server error
  */
-
 const updateCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   const { pid, quantity = 1 } = req.body;
@@ -272,6 +319,7 @@ const updateCart = asyncHandler(async (req, res) => {
     });
   }
 });
+
 
 module.exports = {
   register,

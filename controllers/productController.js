@@ -158,36 +158,108 @@ const getallproducts = asyncHandler(async (req, res) => {
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- *       
+ *   schemas:
+ *     Product:
+ *       type: object
+ *       required:
+ *         - title
+ *         - slug
+ *         - description
+ *         - brand
+ *         - price
+ *         - category
+ *       properties:
+ *         title:
+ *           type: string
+ *         slug:
+ *           type: string
+ *         description:
+ *           type: string
+ *         brand:
+ *           type: string
+ *         price:
+ *           type: number
+ *         category:
+ *           type: string
+ *         thumb:
+ *           type: string
+ *           format: binary
+ *           description: Thumbnail image
+ *         images:
+ *           type: array
+ *           items:
+ *             type: string
+ *             format: binary
+ *             description: Images
+ *
+ * @swagger
  * /api/products:
  *   post:
  *     summary: Create a new product
- *     tags: [Products] 
+ *     tags: [Products]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/Product'
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               slug:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               brand:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               category:
+ *                 type: string
+ *               thumb:
+ *                 type: string
+ *                 format: binary
+ *                 description: Thumbnail image
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                   description: Images
+ *             required:
+ *               - title
+ *               - slug
+ *               - description
+ *               - brand
+ *               - price
+ *               - category
  *     responses:
  *       201:
  *         description: Product created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Product'
  *       400:
  *         description: Bad request
  *       500:
  *         description: Server error
  */
-
 const createproducts = async (req, res) => {
   try {
     const productData = req.body;
+    const files = req?.files;
 
     // Validate that required fields are present
     if (!productData.title || !productData.slug || !productData.description || !productData.brand || !productData.price || !productData.category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    // Process uploaded files
+    if (files?.thumb) productData.thumb = files.thumb[0].path;
+    if (files?.images) productData.images = files.images.map(el => el.path);
 
     const newProduct = new Product(productData);
     const savedProduct = await newProduct.save();
@@ -196,6 +268,8 @@ const createproducts = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
 
 
 /**
@@ -259,7 +333,6 @@ const deleteProduct = asyncHandler(async (req, res) => {
 });
 
 
-
 /**
  * @swagger
  * components:
@@ -268,34 +341,50 @@ const deleteProduct = asyncHandler(async (req, res) => {
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- */
-/**
+ *
  * @swagger
- * /api/cart:
+ * /api/products/{pid}:
  *   put:
- *     summary: Update the user's cart
- *     tags: [Cart]
+ *     summary: Update a product by ID
+ *     tags: [Products]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - name: pid
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the product to update.
  *     requestBody:
  *       required: true
  *       content:
- *         application/x-www-form-urlencoded:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               pid:
+ *               title:
  *                 type: string
- *                 description: Product ID
+ *                 description: Title of the product
  *               quantity:
  *                 type: number
  *                 description: Quantity of the product
  *                 default: 1
+ *               thumb:
+ *                 type: string
+ *                 format: binary
+ *                 description: Thumbnail image
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                   description: Images
  *             required:
- *               - pid
+ *               - title
  *     responses:
  *       200:
- *         description: Cart updated successfully
+ *         description: Product updated successfully
  *         content:
  *           application/json:
  *             schema:
@@ -307,43 +396,99 @@ const deleteProduct = asyncHandler(async (req, res) => {
  *                   type: string
  *       400:
  *         description: Bad request
- *       401:
- *         description: Unauthorized
+ *       404:
+ *         description: Product not found
  *       500:
  *         description: Server error
  */
 const updateProduct = asyncHandler(async (req, res) => {
   const { pid } = req.params;
-  try {
-    if (req.body && req.body.title) {
-      req.body.slug = slugify(req.body.title);
-    }
-    const updatedProduct = await Product.findByIdAndUpdate(pid, req.body, { new: true });
-
-    if (!updatedProduct) {
-      return res.status(404).json({
-        success: false,
-        mes: 'Product not found',
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      mes: updatedProduct,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      success: false,
-      mes: 'Internal Server Error',
-    });
-  }
+  const files = req?.files;
+  if(files?.thumb) req.body.thumb = files?.thumb[0]?.path
+  if(files?.images) req.body.images = files?.images?.map(el => el.path)
+  if (req.body && req.body.title) req.body.slug = slugify(req.body.title);
+  const updateProduct = await Product.findByIdAndUpdate(pid, req.body, {
+    new: true,
+  });
+  return res.status(200).json({
+    success: updateProduct ? true : false,
+    mes: updateProduct ? 'Updated' : "Cant not update product",
+  });
 });
 
+
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
+ * /product/{pid}:
+ *   get:
+ *     summary: Get product by ID
+ *     tags: [Products]
+ *     description: Retrieve the details of a product by its ID.
+ *     parameters:
+ *       - name: pid
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the product to retrieve.
+ *     responses:
+ *       '200':
+ *         description: Successful response
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   description: Indicates whether the request was successful.
+ *                 productData:
+ *                   oneOf:
+ *                     - type: object
+ *                       description: The product data.
+ *                       properties:
+ *                         _id:
+ *                           type: string
+ *                           description: The ID of the product.
+ *                         name:
+ *                           type: string
+ *                           description: The name of the product.
+ *                         price:
+ *                           type: number
+ *                           description: The price of the product.
+ *                         # Thêm các thuộc tính khác của sản phẩm vào đây
+ *                     - type: string
+ *                       description: Error message if the product cannot be found.
+ *       '400':
+ *         description: Bad request
+ *       '404':
+ *         description: Product not found
+ *       '500':
+ *         description: Internal server error
+ *     security:
+ *       - bearerAuth: []
+ */
+const getproduct = asyncHandler(async (req, res) => {
+  const { pid } = req.params;
+  const product = await Product.findById(pid);
+  return res.status(200).json({
+    success: product ? true : false,
+    productData: product ? product : "Can't not get product",
+  });
+});
 
 module.exports = {
   getallproducts,
   createproducts,
   deleteProduct,
-  updateProduct
+  updateProduct,
+  getproduct
 };

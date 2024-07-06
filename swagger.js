@@ -14,12 +14,24 @@ const options = {
         User: {
           type: 'object',
           properties: {
-            name: {
+            firstname: {
               type: 'string'
+            },
+            lastname: {
+              type: 'string'
+            },
+            address: {
+              type: 'string'
+            },
+            mobile: {
+              type: 'number'
             },
             email: {
               type: 'string'
-            }
+            },
+            password: {
+              type: 'string'
+            },
           }
         },
         Product: {

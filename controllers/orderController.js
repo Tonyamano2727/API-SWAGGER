@@ -14,6 +14,7 @@ const asyncHandler = require("express-async-handler");
  * /api/orders:
  *   post:
  *     summary: Create a new order
+ *     tags: [Order]
  *     security:
  *       - bearerAuth: []
  *     responses:
