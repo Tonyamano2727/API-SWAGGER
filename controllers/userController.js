@@ -3,7 +3,7 @@ const User = require("../models/User");
 const Product = require("../models/Product");
 const {
   generrateAccessToken,
-  generrateRefreshToken,
+    generrateRefreshToken
 } = require("../middlewares/jwt");
 
 /**

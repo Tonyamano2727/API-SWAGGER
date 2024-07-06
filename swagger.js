@@ -43,13 +43,60 @@ const options = {
             brand: {
               type: 'string'
             },
-            images: {  // Thay đổi từ imageUrl thành images
+            images: { 
               type: 'array',
               items: {
                 type: 'string'
               }
             },
-            thumb: {  // Thay đổi từ imageUrl thành thumb
+            thumb: {
+              type: 'string'
+            }
+          }
+        },
+        Order: {
+          type: 'object',
+          properties: {
+            products: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  product: {
+                    type: 'string',
+                    description: 'Product ID'
+                  },
+                  quantity: {
+                    type: 'number'
+                  },
+                  color: {
+                    type: 'string'
+                  },
+                  price: {
+                    type: 'number'
+                  },
+                  title: {
+                    type: 'string'
+                  },
+                  thumb: {
+                    type: 'string'
+                  }
+                }
+              }
+            },
+            status: {
+              type: 'string',
+              enum: ['Cancelled', 'Successed'],
+              default: 'Cancelled'
+            },
+            total: {
+              type: 'number'
+            },
+            orderBy: {
+              type: 'string',
+              description: 'User ID'
+            },
+            address: {
               type: 'string'
             }
           }
