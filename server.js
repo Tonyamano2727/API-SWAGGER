@@ -1,5 +1,5 @@
 const express = require('express');
-const userRoutes = require('./routes/userRoutes');
+
 const setupSwagger = require('./swagger');
 const dbConnect = require('./Config/dbconnect');
 require('dotenv').config();
@@ -18,8 +18,6 @@ dbConnect();
 // Thiết lập Swagger
 setupSwagger(app);
 
-// Định tuyến API
-app.use('/api', userRoutes);
 
 initRoutes(app)
 

@@ -208,8 +208,6 @@ const getallproducts = asyncHandler(async (req, res) => {
  *             properties:
  *               title:
  *                 type: string
- *               slug:
- *                 type: string
  *               description:
  *                 type: string
  *               brand:
@@ -230,7 +228,7 @@ const getallproducts = asyncHandler(async (req, res) => {
  *                   description: Images
  *             required:
  *               - title
- *               - slug
+ *               
  *               - description
  *               - brand
  *               - price
@@ -251,12 +249,12 @@ const createproducts = async (req, res) => {
   try {
     const productData = req.body;
     const files = req?.files;
-
+    
     // Validate that required fields are present
-    if (!productData.title || !productData.slug || !productData.description || !productData.brand || !productData.price || !productData.category) {
+    if (!productData.title || !productData.description || !productData.brand || !productData.price || !productData.category) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
+    req.body.slug = slugify(productData.title) + Math.round(Math.random() * 1000 ) + '' ;
     // Process uploaded files
     if (files?.thumb) productData.thumb = files.thumb[0].path;
     if (files?.images) productData.images = files.images.map(el => el.path);
@@ -417,7 +415,6 @@ const updateProduct = asyncHandler(async (req, res) => {
 });
 
 
-
 /**
  * @swagger
  * components:
@@ -426,22 +423,22 @@ const updateProduct = asyncHandler(async (req, res) => {
  *       type: http
  *       scheme: bearer
  *       bearerFormat: JWT
- * 
- * /product/{pid}:
+ * /api/products/{pid}:
  *   get:
- *     summary: Get product by ID
+ *     summary: Get a product by ID
  *     tags: [Products]
- *     description: Retrieve the details of a product by its ID.
  *     parameters:
- *       - name: pid
- *         in: path
+ *       - in: path
+ *         name: pid
  *         required: true
  *         schema:
  *           type: string
- *         description: The ID of the product to retrieve.
+ *         description: ID of the product to delete
+ *     security:
+ *       - bearerAuth: []
  *     responses:
- *       '200':
- *         description: Successful response
+ *       200:
+ *         description: Delete successful
  *         content:
  *           application/json:
  *             schema:
@@ -449,41 +446,30 @@ const updateProduct = asyncHandler(async (req, res) => {
  *               properties:
  *                 success:
  *                   type: boolean
- *                   description: Indicates whether the request was successful.
- *                 productData:
- *                   oneOf:
- *                     - type: object
- *                       description: The product data.
- *                       properties:
- *                         _id:
- *                           type: string
- *                           description: The ID of the product.
- *                         name:
- *                           type: string
- *                           description: The name of the product.
- *                         price:
- *                           type: number
- *                           description: The price of the product.
- *                         # Thêm các thuộc tính khác của sản phẩm vào đây
- *                     - type: string
- *                       description: Error message if the product cannot be found.
- *       '400':
- *         description: Bad request
- *       '404':
+ *                 mes:
+ *                   type: string
+ *       404:
  *         description: Product not found
- *       '500':
- *         description: Internal server error
- *     security:
- *       - bearerAuth: []
+ *       500:
+ *         description: Server error
  */
 const getproduct = asyncHandler(async (req, res) => {
   const { pid } = req.params;
+  console.log(pid);
   const product = await Product.findById(pid);
+  if (!product) {
+    return res.status(404).json({
+      success: false,
+      error: "Product not found",
+    });
+  }
   return res.status(200).json({
-    success: product ? true : false,
-    productData: product ? product : "Can't not get product",
+    success: true,
+    productData: product,
   });
 });
+
+
 
 module.exports = {
   getallproducts,

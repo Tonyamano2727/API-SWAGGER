@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const Product = require("../models/Product");
+
 const {
   generrateAccessToken,
     generrateRefreshToken
@@ -122,20 +123,18 @@ const register = asyncHandler(async (req, res) => {
  * @swagger
  * components:
  *   schemas:
- *     UserLoginFormData:
+ *     UserLogin:
  *       type: object
- *       required:
- *         - email
- *         - password
  *       properties:
  *         email:
  *           type: string
  *         password:
  *           type: string
+ *
  * @swagger
  * /api/login:
  *   post:
- *     summary: Login a user
+ *     summary: Login to user account
  *     tags: [User]
  *     requestBody:
  *       required: true
@@ -158,7 +157,7 @@ const register = asyncHandler(async (req, res) => {
  *               properties:
  *                 success:
  *                   type: boolean
- *                 Accesstoken:
+ *                 accessToken:
  *                   type: string
  *                 userData:
  *                   $ref: '#/components/schemas/User'

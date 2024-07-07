@@ -5,7 +5,7 @@ const OrderRouter = require('./orderRoutes')
 const userRouter = require('./userRoutes')
 
 const initRoutes = (app) => {
-    app.use('/api/user', userRouter)
+    app.use('/api', userRouter)
     app.use('/api/insert', insertdata)
     app.use('/api/products', productsRouter)
     app.use('/api/orders', OrderRouter)
