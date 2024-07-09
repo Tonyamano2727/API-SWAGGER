@@ -102,12 +102,11 @@ const register = asyncHandler(async (req, res) => {
         mes: "User already exists",
       });
     }
-
     const newUser = await User.create(req.body);
     return res.status(200).json({
       success: !!newUser,
       mes: newUser
-        ? "Registration successful. Go to login"
+        ? newUser
         : "Something went wrong",
     });
   } catch (error) {
@@ -314,7 +313,7 @@ const updateCart = asyncHandler(async (req, res) => {
     );
     return res.status(200).json({
       success: response ? true : false,
-      mes: response ? "Updated your cart" : "Something went wrong"
+      mes: response ? response : "Something went wrong"
     });
   }
 });

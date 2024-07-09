@@ -2,6 +2,7 @@ const mongoose = require("mongoose"); // Erase if already required
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { title } = require("process");
+const validator = require('validator')
 // Declare the Schema of the Mongo model
 var userSchema = new mongoose.Schema({
   firstname: {
@@ -16,6 +17,12 @@ var userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    validate: {
+      validator: function(v) {
+        return validator.isEmail(v);
+      },
+      message: props => `${props.value} is not a valid email!`
+    }
   },
   avatar:{
     type: String,
@@ -24,10 +31,25 @@ var userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    validate: {
+      validator: function(v) {
+        // Kiểm tra xem mobile có phải là số điện thoại đúng 10 chữ số không
+        return /^\d{10,11}$/.test(v);
+      },
+      message: props => `${props.value} is not a valid mobile number! Mobile number must be exactly 10 digits.`
+    }
   },
   password: {
     type: String,
     required: true,
+    minlength: 6,
+    validate: {
+      validator: function(v) {
+        // Kiểm tra xem mật khẩu có chứa ít nhất một chữ cái viết hoa không
+        return /[A-Z]/.test(v);
+      },
+      message: props => 'Password must contain at least one uppercase letter!'
+    }
   },
   role: {
     type: String,
